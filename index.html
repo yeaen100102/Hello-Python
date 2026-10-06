@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>예은이의 냥캣 플래피 버디 - 우주 에디션</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Press+Start+2P&family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Jua', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        body {
+            background-color: #050510;
+            overflow: hidden;
+        }
+        .btn-bounce {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+        .pulse-text {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.06); opacity: 0.85; }
+        }
+        .float-anim {
+            animation: float 2s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .rainbow-glow {
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.6), 0 0 40px rgba(168, 85, 247, 0.4);
+        }
+        /* Custom scrollbar reset */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-slate-950 p-2 sm:p-4">
+
+    <!-- Main Game Frame -->
+    <div class="relative w-full max-w-md h-[88vh] max-h-[750px] min-h-[500px] bg-slate-900 rounded-3xl rainbow-glow border-4 border-pink-500/60 overflow-hidden flex flex-col justify-between select-none">
+        
+        <!-- Game Canvas Base -->
+        <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block cursor-pointer"></canvas>
+
+        <!-- Top Header HUD (In Game) -->
+        <div id="hudOverlay" class="relative z-10 flex justify-between items-center p-4 pointer-events-none hidden">
+            <!-- Sound Toggle Button -->
+            <button id="soundBtn" class="pointer-events-auto bg-slate-800/90 hover:bg-slate-700 text-pink-300 border border-pink-500/40 px-3 py-1.5 rounded-full shadow-md text-sm font-bold flex items-center gap-1 backdrop-blur-md transition">
+                <span id="soundIcon">🔊</span> <span id="soundText" class="hidden sm:inline text-xs">소리</span>
+            </button>
+            
+            <!-- In-game Current Score & Hearts Display -->
+            <div class="flex flex-col items-center gap-0.5">
+                <span id="currentScore" class="text-4xl sm:text-5xl font-black text-yellow-300 drop-shadow-[0_4px_8px_rgba(236,72,153,0.8)] pixel-font tracking-wider">0</span>
+                <div class="flex items-center gap-1">
+                    <span id="livesHearts" class="text-base sm:text-lg drop-shadow tracking-widest">💖💖💖</span>
+                    <span id="speedBadge" class="text-[10px] bg-red-950/90 text-red-300 border border-red-500/80 px-1.5 py-0.5 rounded-full font-bold hidden transition-all">속도 UP x1.25</span>
+                </div>
+            </div>
+
+            <!-- Skin / Mode Badge -->
+            <div id="activeSkinBadge" class="bg-pink-950/80 border-2 border-pink-500 text-pink-200 px-3 py-1 rounded-full text-xs font-bold shadow-md backdrop-blur-md transition-all duration-300">
+                🐱 오리지널 냥캣
+            </div>
+
+            <!-- Transform Toast Notification -->
+            <div id="transformToast" class="absolute top-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none hidden transition-all duration-300 transform scale-90 opacity-0 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white font-black px-4 py-2 rounded-full shadow-2xl border-2 border-yellow-300 text-xs sm:text-sm whitespace-nowrap">
+                ✨ 변신!
+            </div>
+        </div>
+
+        <!-- Start Screen Overlay -->
+        <div id="startScreen" class="absolute inset-0 z-20 flex flex-col items-center justify-between p-5 bg-gradient-to-b from-slate-950/90 via-purple-950/80 to-slate-900/95 backdrop-blur-sm">
+            <!-- Title Header -->
+            <div class="text-center mt-2">
+                <div class="inline-block bg-pink-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-md mb-2 border border-pink-300">
+                    🌌 우주를 가르는 무지개 냥캣!
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 drop-shadow-[0_4px_10px_rgba(236,72,153,0.8)] tracking-wide whitespace-nowrap">
+                    예은이의 냥캣 버디
+                </h1>
+                <p class="text-pink-200 text-xs sm:text-sm font-bold drop-shadow mt-1">
+                    냥캣과 함께 우주 기둥을 통과하세요!
+                </p>
+            </div>
+
+            <!-- Floating Preview Character -->
+            <div class="flex flex-col items-center float-anim my-auto relative">
+                <!-- Decorative Rainbow Tail Preview -->
+                <div class="absolute -left-16 top-5 flex flex-col gap-0.5 opacity-90">
+                    <div class="w-16 h-1.5 bg-red-500 rounded-l"></div>
+                    <div class="w-16 h-1.5 bg-orange-500 rounded-l"></div>
+                    <div class="w-16 h-1.5 bg-yellow-400 rounded-l"></div>
+                    <div class="w-16 h-1.5 bg-green-500 rounded-l"></div>
+                    <div class="w-16 h-1.5 bg-blue-500 rounded-l"></div>
+                    <div class="w-16 h-1.5 bg-purple-500 rounded-l"></div>
+                </div>
+
+                <!-- Nyan Cat Preview Box -->
+                <div id="previewBird" class="w-24 h-20 bg-amber-200 border-4 border-amber-500 rounded-xl flex items-center justify-center relative shadow-2xl transition-all duration-300">
+                    <!-- Poptart Frosting -->
+                    <div id="previewIcing" class="absolute inset-1.5 bg-pink-400 rounded-lg flex items-center justify-around px-1">
+                        <div class="w-1.5 h-1.5 bg-pink-600 rounded-full"></div>
+                        <div class="w-1.5 h-1.5 bg-pink-600 rounded-full"></div>
+                        <div class="w-1.5 h-1.5 bg-pink-600 rounded-full"></div>
+                    </div>
+                    
+                    <!-- Cat Head -->
+                    <div class="absolute -right-5 -top-1 w-12 h-11 bg-slate-400 rounded-lg border-2 border-slate-600">
+                        <!-- Ears -->
+                        <div class="absolute -top-3 left-0 w-3 h-3 bg-slate-400 border-t-2 border-l-2 border-slate-600 transform -rotate-12"></div>
+                        <div class="absolute -top-3 right-0 w-3 h-3 bg-slate-400 border-t-2 border-r-2 border-slate-600 transform rotate-12"></div>
+                        <!-- Eyes -->
+                        <div class="absolute top-3 left-2 w-2 h-2 bg-black rounded-full"></div>
+                        <div class="absolute top-3 right-2 w-2 h-2 bg-black rounded-full"></div>
+                        <!-- Rosy Cheek -->
+                        <div class="absolute bottom-2 left-1 w-2.5 h-1.5 bg-pink-500 rounded-full"></div>
+                        <div class="absolute bottom-2 right-1 w-2.5 h-1.5 bg-pink-500 rounded-full"></div>
+                    </div>
+
+                    <!-- Accessory dynamic overlay -->
+                    <div id="previewAccessory" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+
+                <span id="previewQuote" class="text-pink-300 font-extrabold text-xs mt-4 bg-slate-900/90 border border-pink-500/50 px-3.5 py-1 rounded-full shadow-md text-center">
+                    "냥냥냥냥~ 우주 여행 준비완료!"
+                </span>
+            </div>
+
+            <!-- Character Selection Pills -->
+            <div class="w-full max-w-sm bg-slate-900/90 backdrop-blur-md p-2 rounded-2xl border border-pink-500/40 grid grid-cols-5 gap-1 shadow-md my-1">
+                <button onclick="selectSkin('classic')" id="skin-classic" class="skin-btn flex flex-col items-center p-1.5 rounded-xl text-xs font-bold transition-all">
+                    <span class="text-xl">🐱</span>
+                    <span class="text-[10px] mt-0.5">냥캣</span>
+                </button>
+                <button onclick="selectSkin('student')" id="skin-student" class="skin-btn flex flex-col items-center p-1.5 rounded-xl text-xs font-bold transition-all">
+                    <span class="text-xl">👓</span>
+                    <span class="text-[10px] mt-0.5">열공냥</span>
+                </button>
+                <button onclick="selectSkin('cool')" id="skin-cool" class="skin-btn flex flex-col items-center p-1.5 rounded-xl text-xs font-bold transition-all">
+                    <span class="text-xl">😎</span>
+                    <span class="text-[10px] mt-0.5">인싸냥</span>
+                </button>
+                <button onclick="selectSkin('band')" id="skin-band" class="skin-btn flex flex-col items-center p-1.5 rounded-xl text-xs font-bold transition-all">
+                    <span class="text-xl">🎧</span>
+                    <span class="text-[10px] mt-0.5">밴드냥</span>
+                </button>
+                <button onclick="selectSkin('president')" id="skin-president" class="skin-btn flex flex-col items-center p-1.5 rounded-xl text-xs font-bold transition-all">
+                    <span class="text-xl">👑</span>
+                    <span class="text-[10px] mt-0.5">황금냥</span>
+                </button>
+            </div>
+
+            <!-- Start Action Button / Instruction -->
+            <div class="w-full text-center mb-2">
+                <button id="startBtn" class="btn-bounce w-full py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 hover:brightness-110 text-white font-black text-2xl rounded-2xl shadow-lg border-b-4 border-purple-800 active:border-b-0">
+                    🚀 냥캣과 출발하기
+                </button>
+                <p class="pulse-text text-pink-300 font-extrabold text-xs mt-2.5 flex items-center justify-center gap-1">
+                    <span>👆</span> 화면 클릭 또는 <span class="bg-slate-800 px-2 py-0.5 rounded border border-pink-500/50 text-white">스페이스바</span> 부스터!
+                </p>
+            </div>
+        </div>
+
+        <!-- Game Over Screen Overlay -->
+        <div id="gameOverScreen" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md hidden">
+            <div class="w-full max-w-xs bg-slate-900 rounded-3xl p-6 shadow-2xl border-4 border-pink-500 text-center transform transition-all scale-100">
+                <div id="badgeTag" class="inline-block bg-pink-950 text-pink-300 border border-pink-500 font-bold text-xs px-3 py-1 rounded-full mb-2">
+                    🏆 칭호 획득!
+                </div>
+
+                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-300 mb-1">냥냥! 착륙!</h2>
+                <p id="rankTitle" class="text-sm font-bold text-cyan-300 mb-4">"우주 초보 비행냥"</p>
+
+                <!-- Score Board Card -->
+                <div class="bg-slate-950/90 rounded-2xl p-4 border border-purple-500/40 mb-5 flex justify-around items-center">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400">이번 점수</p>
+                        <p id="finalScore" class="text-3xl font-black text-yellow-400 pixel-font mt-1">0</p>
+                    </div>
+                    <div class="w-0.5 h-10 bg-slate-800"></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400">최고 기록</p>
+                        <p id="highScore" class="text-3xl font-black text-emerald-400 pixel-font mt-1">0</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <button id="restartBtn" class="btn-bounce w-full py-3.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-black text-xl rounded-2xl shadow-md border-b-4 border-purple-900 active:border-b-0 mb-2">
+                    🔄 다시 날아가기
+                </button>
+                <button id="homeBtn" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition border border-slate-700">
+                    🏠 메인 화면으로
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Web Audio Synthesizer
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playJump() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.12);
+                } catch(e){}
+            }
+
+            playScore() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.setValueAtTime(880.00, now + 0.08); // A5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(now + 0.25);
+                } catch(e){}
+            }
+
+            playCrash() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch(e){}
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        // Canvas & DOM
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const hudOverlay = document.getElementById('hudOverlay');
+        const currentScoreEl = document.getElementById('currentScore');
+        const finalScoreEl = document.getElementById('finalScore');
+        const highScoreEl = document.getElementById('highScore');
+        const rankTitleEl = document.getElementById('rankTitle');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const homeBtn = document.getElementById('homeBtn');
+        const soundBtn = document.getElementById('soundBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundText = document.getElementById('soundText');
+        const activeSkinBadge = document.getElementById('activeSkinBadge');
+        const transformToast = document.getElementById('transformToast');
+
+        // State variables
+        let width = 360;
+        let height = 640;
+        let gameState = 'START'; // 'START', 'PLAYING', 'GAMEOVER'
+        let animationFrameId = null;
+        let frameCount = 0;
+        let score = 0;
+        let bestScore = parseInt(localStorage.getItem('nyan_buddy_best') || '0', 10);
+        let selectedSkin = 'classic';
+        let toastTimeout = null;
+
+        // Lives & Dynamic Difficulty variables
+        let lives = 3;
+        let invincibleTimer = 0;
+        let currentSpeed = 2.4;
+        let currentSpawnInterval = 100;
+
+        // Physics constants
+        const GRAVITY = 0.38;
+        const JUMP_FORCE = -6.8;
+        const PIPE_SPEED = 2.4;
+        const PIPE_SPAWN_INTERVAL = 100;
+        const PIPE_GAP = 145;
+
+        // Skins with custom themed backgrounds and matching colors
+        const SKINS = {
+            classic: {
+                name: '🐱 오리지널 냥캣',
+                poptartColor: '#fef08a',
+                icingColor: '#f472b6',
+                sparkleColor: '#ec4899',
+                quote: '"냥냥냥냥~ 기본 냥캣이 제일 좋아!"',
+                themeName: '🌌 딥 스페이스',
+                bgColor: '#070714',
+                starColors: ['#ffffff', '#fef08a', '#a5f3fc', '#fbcfe8'],
+                pipeColor: '#0284c7',
+                pipeLight: '#38bdf8',
+                pipeDark: '#0369a1',
+                groundColor: '#0f172a',
+                groundLineColor: '#ec4899'
+            },
+            student: {
+                name: '👓 열공 모범냥',
+                poptartColor: '#bae6fd',
+                icingColor: '#38bdf8',
+                sparkleColor: '#0284c7',
+                quote: '"전교 1등을 향해 날아간다 냥!"',
+                themeName: '📐 사이버 독서실',
+                bgColor: '#021a1a',
+                starColors: ['#38bdf8', '#818cf8', '#67e8f9', '#ffffff'],
+                pipeColor: '#0d9488',
+                pipeLight: '#2dd4bf',
+                pipeDark: '#115e59',
+                groundColor: '#022c22',
+                groundLineColor: '#2dd4bf'
+            },
+            cool: {
+                name: '😎 힙스터 인싸냥',
+                poptartColor: '#e9d5ff',
+                icingColor: '#c084fc',
+                sparkleColor: '#9333ea',
+                quote: '"우주 제일의 힙스터 냥캣 등장!"',
+                themeName: '🌆 신스웨이브 석양',
+                bgColor: '#2a083a',
+                starColors: ['#f43f5e', '#fb923c', '#facc15', '#e879f9'],
+                pipeColor: '#d946ef',
+                pipeLight: '#f0abfc',
+                pipeDark: '#a21caf',
+                groundColor: '#3b0764',
+                groundLineColor: '#f43f5e'
+            },
+            band: {
+                name: '🎧 밴드부 록캣',
+                poptartColor: '#fbcfe8',
+                icingColor: '#fb7185',
+                sparkleColor: '#e11d48',
+                quote: '"우주 비트에 맞춰 신나게 냥~🎶"',
+                themeName: '🎸 네온 콘서트 Stage',
+                bgColor: '#18042c',
+                starColors: ['#f43f5e', '#a855f7', '#06b6d4', '#facc15'],
+                pipeColor: '#e11d48',
+                pipeLight: '#fda4af',
+                pipeDark: '#9f1239',
+                groundColor: '#1e1b4b',
+                groundLineColor: '#a855f7'
+            },
+            president: {
+                name: '👑 황금 전설냥',
+                poptartColor: '#fef08a',
+                icingColor: '#eab308',
+                sparkleColor: '#ca8a04',
+                quote: '"전교 회장의 빛나는 우주 비행!"',
+                themeName: '🌟 황금빛 은하제국',
+                bgColor: '#2a1a00',
+                starColors: ['#fef08a', '#fde047', '#eab308', '#ffffff'],
+                pipeColor: '#d97706',
+                pipeLight: '#fcd34d',
+                pipeDark: '#b45309',
+                groundColor: '#451a03',
+                groundLineColor: '#facc15'
+            }
+        };
+
+        // Nyan Cat Entity
+        const cat = {
+            x: 80,
+            y: 250,
+            width: 44,
+            height: 30,
+            velocity: 0,
+            rotation: 0,
+            trail: [] // Stores history of tail positions for rainbow trail
+        };
+
+        let pipes = [];
+        let particles = [];
+        let stars = [];
+        let meteors = [];
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            width = canvas.width;
+            height = canvas.height;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const skin = SKINS[selectedSkin] || SKINS.classic;
+            const starPalette = skin.starColors || ['#ffffff', '#fef08a', '#a5f3fc', '#fbcfe8'];
+            const count = Math.floor((width * height) / 2500);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2.5 + 1,
+                    speed: Math.random() * 0.8 + 0.2,
+                    twinkle: Math.random() * Math.PI,
+                    color: starPalette[Math.floor(Math.random() * starPalette.length)]
+                });
+            }
+        }
+
+        // Picks a random skin excluding the current one (0% consecutive repetition probability)
+        function changeSkinOnMilestone() {
+            const allSkinKeys = Object.keys(SKINS);
+            // Filter out current skin to guarantee no consecutive duplicates
+            const availableKeys = allSkinKeys.filter(key => key !== selectedSkin);
+            const randomKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+
+            selectedSkin = randomKey;
+            activeSkinBadge.textContent = SKINS[selectedSkin].name;
+            
+            // Refresh stars with new theme palette
+            initStars();
+
+            // Display floating transform notification toast
+            showTransformToast(`✨ 변신! ${SKINS[selectedSkin].name}`);
+            createScoreParticles();
+        }
+
+        function updateLivesUI() {
+            const heartsEl = document.getElementById('livesHearts');
+            const speedEl = document.getElementById('speedBadge');
+            if (!heartsEl) return;
+
+            let heartsStr = '';
+            for (let i = 0; i < 3; i++) {
+                heartsStr += (i < lives) ? '💖' : '🖤';
+            }
+            heartsEl.textContent = heartsStr;
+
+            if (speedEl) {
+                const lost = 3 - lives;
+                if (lost > 0) {
+                    speedEl.classList.remove('hidden');
+                    const multiplier = (currentSpeed / PIPE_SPEED).toFixed(2);
+                    speedEl.textContent = `속도 UP x${multiplier}`;
+                } else {
+                    speedEl.classList.add('hidden');
+                }
+            }
+        }
+
+        function showTransformToast(text) {
+            if (!transformToast) return;
+            transformToast.textContent = text;
+            transformToast.classList.remove('hidden', 'scale-90', 'opacity-0');
+            transformToast.classList.add('scale-105', 'opacity-100');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                transformToast.classList.remove('scale-105', 'opacity-100');
+                transformToast.classList.add('scale-90', 'opacity-0');
+                setTimeout(() => {
+                    transformToast.classList.add('hidden');
+                }, 300);
+            }, 1800);
+        }
+
+        // Select Skin / Character Handler
+        function selectSkin(skinKey) {
+            if (!SKINS[skinKey]) return;
+            selectedSkin = skinKey;
+
+            // Highlight active button in start menu
+            document.querySelectorAll('.skin-btn').forEach(btn => {
+                btn.classList.remove('bg-pink-500/30', 'border-pink-400', 'scale-105');
+                btn.classList.add('bg-slate-800/60', 'border-transparent');
+            });
+            const activeBtn = document.getElementById(`skin-${skinKey}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-800/60', 'border-transparent');
+                activeBtn.classList.add('bg-pink-500/30', 'border-pink-400', 'scale-105');
+            }
+
+            const skin = SKINS[skinKey];
+
+            // Update badge & preview UI elements
+            if (activeSkinBadge) activeSkinBadge.textContent = skin.name;
+            const previewQuote = document.getElementById('previewQuote');
+            if (previewQuote) previewQuote.textContent = skin.quote;
+
+            const previewBird = document.getElementById('previewBird');
+            const previewIcing = document.getElementById('previewIcing');
+            if (previewBird) previewBird.style.backgroundColor = skin.poptartColor;
+            if (previewIcing) previewIcing.style.backgroundColor = skin.icingColor;
+
+            initStars();
+        }
+
+        // Jump physics action
+        function jump() {
+            if (gameState !== 'PLAYING') return;
+            cat.velocity = JUMP_FORCE;
+            sound.playJump();
+
+            // Create jump booster particle trail
+            for (let i = 0; i < 6; i++) {
+                particles.push({
+                    x: cat.x - 15,
+                    y: cat.y + (Math.random() - 0.5) * 12,
+                    vx: -(Math.random() * 3 + 2),
+                    vy: (Math.random() - 0.5) * 2,
+                    radius: Math.random() * 3 + 2,
+                    alpha: 1,
+                    color: Math.random() > 0.5 ? '#f472b6' : '#fef08a'
+                });
+            }
+        }
+
+        // Burst particles on milestone score
+        function createScoreParticles() {
+            const colors = ['#fef08a', '#38bdf8', '#f472b6', '#a855f7', '#34d399'];
+            for (let i = 0; i < 16; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 1.5;
+                particles.push({
+                    x: cat.x,
+                    y: cat.y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: Math.random() * 3.5 + 1.5,
+                    alpha: 1,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+        }
+
+        function startGame() {
+            sound.init();
+            gameState = 'PLAYING';
+            score = 0;
+            frameCount = 0;
+            pipes = [];
+            particles = [];
+            meteors = [];
+
+            lives = 3;
+            invincibleTimer = 0;
+            currentSpeed = PIPE_SPEED;
+            currentSpawnInterval = PIPE_SPAWN_INTERVAL;
+            updateLivesUI();
+
+            cat.x = width * 0.28;
+            cat.y = height * 0.4;
+            cat.velocity = 0;
+            cat.rotation = 0;
+            cat.trail = [];
+
+            currentScoreEl.textContent = '0';
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hudOverlay.classList.remove('hidden');
+        }
+
+        function showStartScreen() {
+            gameState = 'START';
+            startScreen.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+            hudOverlay.classList.add('hidden');
+        }
+
+        function spawnPipe() {
+            const minHeight = 60;
+            const maxHeight = height - PIPE_GAP - 120;
+            const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+
+            pipes.push({
+                x: width + 60,
+                top: topHeight,
+                bottom: height - topHeight - PIPE_GAP,
+                passed: false
+            });
+        }
+
+        function spawnMeteor() {
+            const mSize = Math.random() * 6 + 12; // 반지름 12 ~ 18px
+            meteors.push({
+                x: width + 50,
+                y: Math.random() * (height - 180) + 60,
+                vx: -(PIPE_SPEED + 1.2 + Math.random() * 1.5),
+                vy: (Math.random() - 0.5) * 1.2,
+                size: mSize,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.1
+            });
+        }
+
+        function checkCollision() {
+            const floorY = height - 40;
+            const catRadius = 14;
+
+            if (cat.y - catRadius <= 0 || cat.y + catRadius >= floorY) {
+                return true;
+            }
+
+            for (let i = 0; i < pipes.length; i++) {
+                let p = pipes[i];
+                let pipeWidth = 60;
+
+                if (cat.x + catRadius > p.x && cat.x - catRadius < p.x + pipeWidth) {
+                    if (cat.y - catRadius + 3 < p.top || cat.y + catRadius - 3 > height - p.bottom) {
+                        return true;
+                    }
+                }
+            }
+
+            // 운석 충돌 검사 (냥캣과 운석 간 거리 검사)
+            for (let i = 0; i < meteors.length; i++) {
+                let m = meteors[i];
+                let dx = cat.x - m.x;
+                let dy = cat.y - m.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < catRadius + m.size * 0.8) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function handleGameOver() {
+            sound.playCrash();
+            gameState = 'GAMEOVER';
+
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('nyan_buddy_best', bestScore.toString());
+            }
+
+            finalScoreEl.textContent = score;
+            highScoreEl.textContent = bestScore;
+
+            let rank = "우주 초보 비행냥 🐾";
+            if (score >= 30) rank = "은하계 무지개 전설 🌌";
+            else if (score >= 20) rank = "우주 탐사 대장냥 🚀";
+            else if (score >= 10) rank = "달나라 점프 마스터 🌕";
+            else if (score >= 5) rank = "대기권 돌파 비행사 🌠";
+
+            rankTitleEl.textContent = rank;
+
+            setTimeout(() => {
+                hudOverlay.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+            }, 300);
+        }
+
+        function drawBackground() {
+            const currentTheme = SKINS[selectedSkin] || SKINS.classic;
+
+            // Dynamic background color matching selected skin theme
+            ctx.fillStyle = currentTheme.bgColor || '#070714';
+            ctx.fillRect(0, 0, width, height);
+
+            // Twinkling Space Stars with themed colors
+            stars.forEach(s => {
+                s.twinkle += 0.05;
+                const alpha = 0.3 + Math.abs(Math.sin(s.twinkle)) * 0.7;
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+                ctx.globalAlpha = 1.0;
+
+                if (gameState === 'PLAYING') {
+                    s.x -= s.speed;
+                    if (s.x < 0) s.x = width;
+                }
+            });
+        }
+
+        function drawPipes() {
+            const pipeWidth = 60;
+            const capHeight = 22;
+            const capIndent = 3;
+            const currentTheme = SKINS[selectedSkin] || SKINS.classic;
+
+            pipes.forEach((p) => {
+                const topY = p.top;
+                const bottomY = height - p.bottom;
+
+                ctx.save();
+
+                // Dynamic single color palette according to active theme
+                const mainColor = currentTheme.pipeColor || '#0284c7';   
+                const lightColor = currentTheme.pipeLight || '#38bdf8';  
+                const darkColor = currentTheme.pipeDark || '#0369a1';   
+                const strokeColor = '#020617'; 
+
+                // Top Pipe Body
+                ctx.fillStyle = mainColor;
+                ctx.fillRect(p.x + capIndent, 0, pipeWidth - capIndent * 2, topY - capHeight);
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(p.x + capIndent, 0, 4, topY - capHeight);
+                ctx.fillStyle = darkColor;
+                ctx.fillRect(p.x + pipeWidth - capIndent - 4, 0, 4, topY - capHeight);
+
+                // Top Pipe Cap
+                ctx.fillStyle = mainColor;
+                ctx.fillRect(p.x, topY - capHeight, pipeWidth, capHeight);
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(p.x, topY - capHeight, pipeWidth, 3);
+                ctx.fillStyle = darkColor;
+                ctx.fillRect(p.x, topY - 3, pipeWidth, 3);
+
+                // Outlines Top
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x + capIndent, 0, pipeWidth - capIndent * 2, topY - capHeight);
+                ctx.strokeRect(p.x, topY - capHeight, pipeWidth, capHeight);
+
+                // Bottom Pipe Body
+                ctx.fillStyle = mainColor;
+                ctx.fillRect(p.x + capIndent, bottomY + capHeight, pipeWidth - capIndent * 2, p.bottom - capHeight);
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(p.x + capIndent, bottomY + capHeight, 4, p.bottom - capHeight);
+                ctx.fillStyle = darkColor;
+                ctx.fillRect(p.x + pipeWidth - capIndent - 4, bottomY + capHeight, 4, p.bottom - capHeight);
+
+                // Bottom Pipe Cap
+                ctx.fillStyle = mainColor;
+                ctx.fillRect(p.x, bottomY, pipeWidth, capHeight);
+                ctx.fillStyle = lightColor;
+                ctx.fillRect(p.x, bottomY, pipeWidth, 3);
+                ctx.fillStyle = darkColor;
+                ctx.fillRect(p.x, bottomY + capHeight - 3, pipeWidth, 3);
+
+                // Outlines Bottom
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x + capIndent, bottomY + capHeight, pipeWidth - capIndent * 2, p.bottom - capHeight);
+                ctx.strokeRect(p.x, bottomY, pipeWidth, capHeight);
+
+                ctx.restore();
+            });
+        }
+
+        function drawMeteors() {
+            meteors.forEach((m) => {
+                ctx.save();
+                ctx.translate(m.x, m.y);
+
+                // 불꽃 연기 후광 효과
+                const gradient = ctx.createRadialGradient(-m.size * 0.4, 0, 2, -m.size * 0.4, 0, m.size * 1.6);
+                gradient.addColorStop(0, '#fde047');
+                gradient.addColorStop(0.4, '#f97316');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(-m.size * 0.4, 0, m.size * 1.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.rotate(m.rotation);
+
+                // 운석 암석 본체
+                ctx.fillStyle = '#64748b';
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, m.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 운석 크레이터 파임 디테일
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(-m.size * 0.3, -m.size * 0.2, m.size * 0.35, 0, Math.PI * 2);
+                ctx.arc(m.size * 0.3, m.size * 0.25, m.size * 0.25, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
+        function drawGround() {
+            const floorY = height - 40;
+            const currentTheme = SKINS[selectedSkin] || SKINS.classic;
+
+            // Space Ground matching theme
+            ctx.fillStyle = currentTheme.groundColor || '#0f172a';
+            ctx.fillRect(0, floorY, width, 40);
+
+            // Neon Top Line matching theme
+            ctx.fillStyle = currentTheme.groundLineColor || '#ec4899';
+            ctx.fillRect(0, floorY, width, 4);
+
+            // Moving Grid Lines using currentSpeed
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            const offset = (frameCount * currentSpeed) % 20;
+            for (let x = -offset; x < width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, floorY + 4);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+        }
+
+        function drawRainbowTrail() {
+            if (cat.trail.length < 2) return;
+
+            const rainbowColors = [
+                '#ff0000', // Red
+                '#ff9900', // Orange
+                '#ffff00', // Yellow
+                '#33cc33', // Green
+                '#0099ff', // Blue
+                '#6633ff'  // Purple
+            ];
+            const stripeHeight = 3.5;
+
+            for (let i = 0; i < cat.trail.length - 1; i++) {
+                const pt1 = cat.trail[i];
+                const pt2 = cat.trail[i + 1];
+
+                // Calculate opacity fade-out based on lifespan (2.5 seconds / 150 frames)
+                const alpha = Math.max(0, 1 - (pt1.age / pt1.maxAge));
+                if (alpha <= 0) continue;
+
+                const waveOffset = Math.sin((frameCount + i * 4) * 0.2) * 2;
+
+                ctx.save();
+                ctx.globalAlpha = alpha;
+
+                rainbowColors.forEach((color, idx) => {
+                    ctx.fillStyle = color;
+                    const y1 = pt1.y - 10 + (idx * stripeHeight) + waveOffset;
+                    const y2 = pt2.y - 10 + (idx * stripeHeight) + waveOffset;
+
+                    ctx.beginPath();
+                    ctx.moveTo(pt1.x, y1);
+                    ctx.lineTo(pt2.x, y2);
+                    ctx.lineTo(pt2.x, y2 + stripeHeight);
+                    ctx.lineTo(pt1.x, y1 + stripeHeight);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                ctx.restore();
+            }
+        }
+
+        function drawNyanCat() {
+            if (invincibleTimer > 0 && Math.floor(invincibleTimer / 6) % 2 === 0) {
+                return; // Blinking effect when damaged
+            }
+
+            ctx.save();
+            ctx.translate(cat.x, cat.y);
+
+            cat.rotation = Math.min(Math.PI / 5, Math.max(-Math.PI / 5, cat.velocity * 0.08));
+            ctx.rotate(cat.rotation);
+
+            const skin = SKINS[selectedSkin] || SKINS.classic;
+
+            // Poptart Biscuit Base
+            ctx.fillStyle = skin.poptartColor;
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(-20, -14, 32, 26, 5);
+            else ctx.rect(-20, -14, 32, 26);
+            ctx.fill();
+            ctx.stroke();
+
+            // Poptart Pink Frosting
+            ctx.fillStyle = skin.icingColor;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(-16, -11, 24, 20, 3);
+            else ctx.rect(-16, -11, 24, 20);
+            ctx.fill();
+
+            // Frosting Sprinkles
+            ctx.fillStyle = skin.sparkleColor;
+            ctx.fillRect(-12, -7, 3, 3);
+            ctx.fillRect(-4, -4, 3, 3);
+            ctx.fillRect(2, -8, 3, 3);
+            ctx.fillRect(-10, 3, 3, 3);
+            ctx.fillRect(0, 2, 3, 3);
+
+            // Waving Cat Tail (Left)
+            const tailY = Math.sin(frameCount * 0.3) * 4;
+            ctx.fillStyle = '#94a3b8';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(-23, tailY, 6, 3, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cat Feet (Bottom & Front)
+            const legOffset = Math.sin(frameCount * 0.4) * 2;
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(-14 + legOffset, 12, 5, 4);
+            ctx.fillRect(-2 + legOffset, 12, 5, 4);
+            ctx.fillRect(6 + legOffset, 12, 5, 4);
+
+            // Cat Head
+            ctx.fillStyle = '#94a3b8';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(4, -13, 20, 18, 4);
+            else ctx.rect(4, -13, 20, 18);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cat Ears
+            ctx.beginPath();
+            ctx.moveTo(6, -13);
+            ctx.lineTo(10, -19);
+            ctx.lineTo(14, -13);
+            ctx.moveTo(16, -13);
+            ctx.lineTo(20, -19);
+            ctx.lineTo(22, -13);
+            ctx.fill();
+            ctx.stroke();
+
+            // Eyes
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(10, -7, 3, 3);
+            ctx.fillRect(18, -7, 3, 3);
+
+            // White eye catchlights
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(10, -7, 1, 1);
+            ctx.fillRect(18, -7, 1, 1);
+
+            // Rosy Cheeks
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillRect(8, -2, 4, 2);
+            ctx.fillRect(19, -2, 4, 2);
+
+            // Cat Nose
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillRect(15, -4, 2, 2);
+
+            // Skin Accessories
+            if (selectedSkin === 'student') {
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(8, -8, 6, 5);
+                ctx.strokeRect(16, -8, 6, 5);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.moveTo(2, -14);
+                ctx.lineTo(22, -18);
+                ctx.lineTo(18, -12);
+                ctx.lineTo(2, -12);
+                ctx.closePath();
+                ctx.fill();
+            } else if (selectedSkin === 'cool') {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(8, -8, 14, 5);
+
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.arc(10, -14, 7, Math.PI, Math.PI * 2);
+                ctx.fill();
+            } else if (selectedSkin === 'band') {
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(14, -6, 12, Math.PI * 1.1, Math.PI * 1.9);
+                ctx.stroke();
+
+                ctx.fillStyle = '#f43f5e';
+                ctx.fillRect(3, -9, 4, 10);
+                ctx.fillRect(21, -9, 4, 10);
+            } else if (selectedSkin === 'president') {
+                ctx.fillStyle = '#eab308';
+                ctx.strokeStyle = '#ca8a04';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(8, -13);
+                ctx.lineTo(6, -21);
+                ctx.lineTo(11, -16);
+                ctx.lineTo(14, -22);
+                ctx.lineTo(17, -16);
+                ctx.lineTo(22, -21);
+                ctx.lineTo(20, -13);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                if (gameState === 'PLAYING') {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.03;
+                }
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function gameLoop() {
+            frameCount++;
+
+            ctx.clearRect(0, 0, width, height);
+            drawBackground();
+
+            if (gameState === 'PLAYING') {
+                if (invincibleTimer > 0) {
+                    invincibleTimer--;
+                }
+
+                cat.velocity += GRAVITY;
+                cat.y += cat.velocity;
+
+                // Move trail points along flight path with current speed
+                for (let i = cat.trail.length - 1; i >= 0; i--) {
+                    let pt = cat.trail[i];
+                    pt.x -= currentSpeed;
+                    pt.age++;
+                    if (pt.age >= pt.maxAge) {
+                        cat.trail.splice(i, 1);
+                    }
+                }
+                // Record new trail point at current cat location
+                cat.trail.push({ x: cat.x - 10, y: cat.y, age: 0, maxAge: 150 });
+
+                if (frameCount % currentSpawnInterval === 0) {
+                    spawnPipe();
+                }
+
+                // 점수가 5점 이상일 때 일정 확률로 오른쪽에 운석 등장
+                if (score >= 5 && frameCount % 110 === 0) {
+                    if (Math.random() < 0.7) { // 70% 확률로 운석 생성
+                        spawnMeteor();
+                    }
+                }
+
+                // 운석 위치 업데이트
+                for (let i = meteors.length - 1; i >= 0; i--) {
+                    let m = meteors[i];
+                    m.x += m.vx;
+                    m.y += m.vy;
+                    m.rotation += m.rotSpeed;
+
+                    if (frameCount % 2 === 0) {
+                        particles.push({
+                            x: m.x + m.size * 0.4,
+                            y: m.y + (Math.random() - 0.5) * 6,
+                            vx: Math.random() * 2 + 1,
+                            vy: (Math.random() - 0.5) * 1.5,
+                            radius: Math.random() * 3 + 2,
+                            alpha: 0.8,
+                            color: Math.random() > 0.5 ? '#f97316' : '#facc15'
+                        });
+                    }
+
+                    if (m.x < -60) {
+                        meteors.splice(i, 1);
+                    }
+                }
+
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    let p = pipes[i];
+                    p.x -= currentSpeed;
+
+                    if (!p.passed && p.x + 60 < cat.x) {
+                        p.passed = true;
+                        score++;
+                        currentScoreEl.textContent = score;
+                        sound.playScore();
+                        createScoreParticles();
+
+                        // 5단위 점수 달성 시 (5, 10, 15, 20...) 무작위 비중복 캐릭터 & 테마 변신!
+                        if (score > 0 && score % 5 === 0) {
+                            changeSkinOnMilestone();
+                        }
+                    }
+
+                    if (p.x < -70) {
+                        pipes.splice(i, 1);
+                    }
+                }
+
+                if (checkCollision()) {
+                    if (invincibleTimer <= 0) {
+                        lives--;
+                        updateLivesUI();
+                        sound.playCrash();
+
+                        if (lives > 0) {
+                            // Give temporary invincibility and bump difficulty
+                            invincibleTimer = 90; // ~1.5s invincibility
+                            cat.y = Math.max(80, Math.min(height - 140, cat.y));
+                            cat.velocity = -3; // Safety bounce
+
+                            // Increase difficulty proportionally to lost lives
+                            const lostLives = 3 - lives;
+                            currentSpeed = PIPE_SPEED + (lostLives * 0.6); // 2.4 -> 3.0 -> 3.6
+                            currentSpawnInterval = Math.max(65, PIPE_SPAWN_INTERVAL - (lostLives * 15)); // 100 -> 85 -> 70
+
+                            showTransformToast(`⚡️ 충돌! 목숨 -1 (속도 UP! 🔥)`);
+
+                            // Clear immediate obstacles nearby for safe recovery
+                            pipes = pipes.filter(p => p.x > cat.x + 100 || p.x + 60 < cat.x - 50);
+                            meteors = meteors.filter(m => m.x > cat.x + 80 || m.x < cat.x - 50);
+                        } else {
+                            handleGameOver();
+                        }
+                    }
+                }
+            } else if (gameState === 'START') {
+                cat.y = height * 0.45 + Math.sin(frameCount * 0.05) * 6;
+                cat.trail = [];
+                for (let i = 0; i < 15; i++) {
+                    cat.trail.push({ x: cat.x - (15 - i) * 6, y: cat.y, age: 0, maxAge: 150 });
+                }
+            }
+
+            drawRainbowTrail();
+            drawPipes();
+            drawMeteors();
+            drawGround();
+            drawParticles();
+            drawNyanCat();
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        canvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (gameState === 'PLAYING') {
+                jump();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') {
+                    jump();
+                } else if (gameState === 'START') {
+                    startGame();
+                }
+            }
+        });
+
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        restartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        homeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showStartScreen();
+        });
+
+        soundBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sound.init();
+            sound.muted = !sound.muted;
+            soundIcon.textContent = sound.muted ? '🔇' : '🔊';
+            if (soundText) soundText.textContent = sound.muted ? '음소거' : '소리';
+        });
+
+        // Initialize Application
+        window.onload = function() {
+            resizeCanvas();
+            selectSkin('classic');
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
